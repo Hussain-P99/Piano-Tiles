@@ -8,5 +8,5 @@ package com.hsn.pianotiles.handler
 interface ITileCallback {
     fun setGameBegin()
     fun setGameOver()
-    fun updateScore(score : Float)
+    fun updateScore(score : String)
 }

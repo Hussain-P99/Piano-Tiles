@@ -6,8 +6,10 @@
 package com.hsn.pianotiles.handler
 
 import android.graphics.Canvas
+import android.os.CountDownTimer
 import com.hsn.pianotiles.core.Tile
 import com.hsn.pianotiles.core.TileType
+import com.hsn.pianotiles.utils.Constants
 import com.hsn.pianotiles.utils.Util
 import com.hsn.pianotiles.utils.ViewPortHandler
 import java.util.Timer
@@ -15,7 +17,10 @@ import java.util.TimerTask
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile {
+class ClassicTilesBoardHandler(
+    private val iTileCallback: ITileCallback,
+    private val gameType: GameType
+) : ITile {
 
 
     private var tiles = ArrayList<ArrayList<Tile>>()
@@ -33,9 +38,52 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
 
     private var timer = Timer()
 
-    private var rowMax = 100
+    private val rowMax: Int
+        get() {
+            return when (gameType) {
+                GameType.CLASSIC -> 50
+                GameType.ARCADE -> Int.MAX_VALUE
+                GameType.ZEN -> Int.MAX_VALUE
+                GameType.RELAY -> Int.MAX_VALUE
+                GameType.RUSH -> Int.MAX_VALUE
+                GameType.COLOR -> 50
+            }
+        }
 
     private var rowCreated = rows
+
+    private val gameOverTimer: CountDownTimer?
+        get() {
+            return when (gameType) {
+                GameType.ZEN -> object : CountDownTimer(Constants.ZEN_TIME * 1000L, 150L) {
+                    override fun onTick(time: Long) {
+                        score = (time / 1000f)
+                        iTileCallback.updateScore(getScore())
+                        if (gameOver) {
+                            cancel()
+                        }
+                    }
+
+                    override fun onFinish() {
+                        setGameOver()
+                    }
+                }
+                GameType.RELAY -> object : CountDownTimer(Constants.RELAY_TIME * 1000L, 150L) {
+                    override fun onTick(time: Long) {
+                        score = (time / 1000f)
+                        iTileCallback.updateScore(getScore())
+                        if (gameOver) {
+                            cancel()
+                        }
+                    }
+
+                    override fun onFinish() {
+                        setGameOver()
+                    }
+                }
+                else -> null
+            }
+        }
 
     private val scoreUpdateTask: TimerTask
         get() = object : TimerTask() {
@@ -90,6 +138,15 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
             if (isBegin()) {
                 isStart = false
                 iTileCallback.setGameBegin()
+                beginScoreUpdateTask()
+            }
+        }
+    }
+
+    private fun beginScoreUpdateTask() {
+        when (gameType) {
+            GameType.ZEN, GameType.RELAY -> gameOverTimer?.start()
+            else -> {
                 timer.scheduleAtFixedRate(scoreUpdateTask, 0, 1)
             }
         }
@@ -105,13 +162,22 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
         }
     }
 
-    override fun getScore(): Float {
-        return (score / 1000f)
+    override fun getScore(): String {
+        return when (gameType) {
+            GameType.ZEN, GameType.RELAY -> {
+                score.toString()
+            }
+            else -> {
+                String.format("%.3f", score / 1000)
+            }
+        }
     }
 
     override fun setGameOver() {
         gameOver = true
         iTileCallback.setGameOver()
+        timer.cancel()
+        scoreUpdateTask.cancel()
     }
 
     override fun isGameOver(): Boolean = gameOver
@@ -164,6 +230,7 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
         timer.purge()
         timer = Timer()
         initializeTiles()
+        iTileCallback.updateScore(getScore())
     }
 
     override fun draw(canvas: Canvas) {
@@ -204,7 +271,7 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
     override fun isFinished(): Boolean {
         // check first n - 1 rows contains Empty Tiles
         var finished = true
-        for (i in 0 until rows-1) {
+        for (i in 0 until rows - 1) {
             for (j in 0 until cols) {
                 if (tiles[i][j].tileType == TileType.WHITE || tiles[i][j].tileType == TileType.BLACK) {
                     finished = false
@@ -213,7 +280,7 @@ class ClassicTilesBoardHandler(private val iTileCallback: ITileCallback) : ITile
         }
         if (finished) {
             removeLastRowAddAtTop()
-            reset()
+            setGameOver()
         }
         return finished
     }

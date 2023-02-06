@@ -25,6 +25,6 @@ interface ITile {
     fun isGameOver(): Boolean
     fun checkTilesClicked(x: Int, y: Int)
     fun checkWhiteTileClicked(x: Int, y: Int): Boolean
-    fun getScore() : Float
+    fun getScore() : String
     fun isFinished(): Boolean
 }

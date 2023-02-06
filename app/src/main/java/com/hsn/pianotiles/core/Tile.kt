@@ -56,7 +56,7 @@ class Tile(
         } else {
             if (tileType == TileType.BLACK) {
                 if (isClicked) {
-                    tilePaint.color = Color.DKGRAY
+                    tilePaint.color = Color.LTGRAY
                 } else {
                     tilePaint.color = Color.BLACK
                 }

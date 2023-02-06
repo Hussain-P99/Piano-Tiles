@@ -6,6 +6,7 @@ import androidx.databinding.DataBindingUtil
 import com.hsn.pianotiles.databinding.ActivityMainBinding
 import com.hsn.pianotiles.gameview.TileBoardView
 import com.hsn.pianotiles.handler.ClassicTilesBoardHandler
+import com.hsn.pianotiles.handler.GameType
 import com.hsn.pianotiles.handler.ITile
 import com.hsn.pianotiles.handler.ITileCallback
 
@@ -25,9 +26,14 @@ class MainActivity : AppCompatActivity(), ITileCallback {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
         tileBoardView = binding.container
-        tilesBoardHandler = ClassicTilesBoardHandler(this)
+        tilesBoardHandler = ClassicTilesBoardHandler(this,GameType.RELAY)
         tileBoardView.setTilesBoardHandler(tilesBoardHandler)
 
+        binding.reset.setOnClickListener {
+            if (tilesBoardHandler.isGameOver()) {
+                tilesBoardHandler.reset()
+            }
+        }
 
     }
 
@@ -51,13 +57,11 @@ class MainActivity : AppCompatActivity(), ITileCallback {
     }
 
     override fun setGameOver() {
-        Thread.sleep(1000)
-        tilesBoardHandler.reset()
     }
 
-    override fun updateScore(score: Float) {
+    override fun updateScore(score: String) {
         runOnUiThread {
-            binding.score.text = String.format("%.3f", score)
+            binding.score.text = score
         }
     }
 }
